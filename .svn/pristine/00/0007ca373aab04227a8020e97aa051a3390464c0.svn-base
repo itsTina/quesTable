@@ -1,0 +1,166 @@
+require('./check-versions')()
+var users= require('../static/data/users.json')
+var config = require('../config')
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = JSON.parse(config.dev.env.NODE_ENV)
+}
+var opn = require('opn')
+var path = require('path')
+var express = require('express')
+var route=express.Router()
+var parseurl = require('parseurl')
+
+var bodyParser = require('body-parser');
+var session = require('express-session')
+var RedisStore = require('connect-redis')(session)
+
+var app = express()
+var hbs = require('hbs');
+var webpack = require('webpack')
+var proxyMiddleware = require('http-proxy-middleware')
+var webpackConfig = require('./webpack.dev.conf')
+
+var compiler = webpack(webpackConfig)
+
+app.set('view engine','html');
+app.engine('html',hbs.__express)
+
+// default port where dev server listens for incoming traffic
+var port = process.env.PORT || config.dev.port
+// automatically open browser, if not set will be false
+var autoOpenBrowser = !!config.dev.autoOpenBrowser
+// Define HTTP proxies to your custom API backend
+// https://github.com/chimurai/http-proxy-middleware
+var proxyTable = config.dev.proxyTable
+
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true }));
+
+//session store
+app.use(session({
+  secret: 'keyboard cat',
+  store:new RedisStore({
+    "host": "127.0.0.1",
+    "port": "6379",
+    "ttl": 60 * 60 * 24 * 30,   //Session的有效期为30天
+  }),
+  resave:false,
+  saveUninitialized:true
+}))
+
+//查看是否登陆
+route.get('/',function (req,res,next) {
+  if(req.url=='/' && !req.session.user) {
+      res.redirect('/login');
+  }else{
+    next();
+  }
+})
+var findUser= function(id){
+  for(var u in users){
+    if(users[u].id == id)
+      return {name:users[u].name, id:users[u].id};
+  }
+  return null;
+}
+//查看是否登陆
+route.get('/getUserInfo',function (req,res,next) {
+  if( req.session.user) {
+    res.send({status:0,data:findUser(req.query.id)});
+  }else{
+    next();
+  }
+})
+route.post('/loginIn',function (req,res,next) {
+  if(true){
+    if(users[req.body.user] && req.body.password == users[req.body.user].psw){
+      //成功获取用户对象
+      req.session.user=users[req.body.user].id;
+      req.session.save();
+      res.send({status:0, data:users[req.body.user]});
+    }else{
+      res.status(500);
+      res.send({ status:1,msg:'登陆失败' });
+    }
+  }else{
+    next()
+  }
+})
+
+//退出
+app.use('/logout', function (req,res,next) {
+    req.session.user=null;
+    req.session.destroy();
+    //req.clearCookie('connect.sid');
+    res.redirect('/login');
+})
+route.get('/login',function(req,res,next){
+  res.render('./login.html')
+})
+app.use(route);
+
+
+var devMiddleware = require('webpack-dev-middleware')(compiler, {
+  publicPath: webpackConfig.output.publicPath,
+  quiet: true
+})
+
+var hotMiddleware = require('webpack-hot-middleware')(compiler, {
+  log: () => {}
+})
+// force page reload when html-webpack-plugin template changes
+compiler.plugin('compilation', function (compilation) {
+  compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
+    hotMiddleware.publish({ action: 'reload' })
+    cb()
+  })
+})
+
+// proxy api requests
+Object.keys(proxyTable).forEach(function (context) {
+  var options = proxyTable[context]
+  if (typeof options === 'string') {
+    options = { target: options }
+  }
+  app.use(proxyMiddleware(options.filter || context, options))
+})
+
+// handle fallback for HTML5 history API
+app.use(require('connect-history-api-fallback')())
+
+// serve webpack bundle output
+app.use(devMiddleware)
+
+// enable hot-reload and state-preserving
+// compilation error display
+app.use(hotMiddleware)
+
+// serve pure static assets
+var staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
+app.use(staticPath, express.static('./static'))
+
+
+var uri = 'http://localhost:' + port
+
+var _resolve
+var readyPromise = new Promise(resolve => {
+  _resolve = resolve
+})
+
+console.log('> Starting dev server...')
+devMiddleware.waitUntilValid(() => {
+  console.log('> Listening at ' + uri + '\n')
+  // when env is testing, don't need open it
+  if (autoOpenBrowser && process.env.NODE_ENV !== 'testing') {
+    opn(uri)
+  }
+  _resolve()
+});
+
+var server = app.listen(port)
+module.exports = {
+  ready: readyPromise,
+  close: () => {
+    server.close()
+  }
+}

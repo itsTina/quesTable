@@ -1,0 +1,26 @@
+/**
+ * Created by mating on 2017/4/27.
+ */
+$(function(){
+  var formValid=$('form.inputBox').validate();
+  $.validator.messages=$.extend($.validator.messages,{
+    required: function(show,el){
+      return $(el).attr('placeholder')||'请输入';
+    }
+  });
+  $('form').on('submit',function (ev) {
+    if(formValid && formValid.form()){
+      $.post('/loginIn',{
+        user:$('input[name=user]').val(),
+        password:$('input[name=password]').val()
+      },function(res){
+        if(true){
+          location.href = location.origin+'/#/?id='+res.data.id;
+        }
+      }).catch(function (err) {
+        alert('登陆失败');
+      })
+    }
+    return false;
+  })
+})

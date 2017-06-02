@@ -1,0 +1,51 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+import login from '@/components/login'
+import Hello from '@/components/Hello'
+import main from '@/components/main'
+
+import getCookie from '../utils/cookie'
+
+Vue.use(Router);
+
+var cookieObj=new getCookie();
+var route=new Router({
+  routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: login
+    },
+    {
+      path: '/hello',
+      name: 'hello',
+      component: Hello
+    },
+    {
+      path: '/',
+      name: 'main',
+      component: main,
+      children:[{
+        path: '/okr',
+        name: 'okr',
+        component: Hello
+      }]
+    }
+  ]
+});
+//验证用户是否登陆
+/*route.beforeEach((to, from, next) => {
+
+  if(to.path.indexOf('login')>0){
+    next();
+  }
+  var userCookie= cookieObj.get('okruserid');
+  $.get('/', {sid: userCookie}).then(function(){
+    next();
+  }).catch(function(){
+    //redirect to login url
+    next({path:'/login'});
+  });
+});*/
+
+export default route;
