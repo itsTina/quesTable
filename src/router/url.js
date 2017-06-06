@@ -2,7 +2,7 @@
  * Created by mating on 2017/5/22.
  */
 export default {
-  base:'http://10.1.18.145:8183/requirement/',//http://10.1.18.143:8183/requirement/',
+  base:'/requirement/',//http://10.1.18.143:8183/requirement/',http://10.1.18.145:8183
   request:{
     userSave:'userSave.do',
     account:'userList.do',

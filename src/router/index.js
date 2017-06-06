@@ -18,7 +18,7 @@ var ro= [
     }
   ]
 ;
-/**/if(['admin'].includes($('#loginId').val())){
+/**/if('admin'==($('#loginId').val())){
   ro.push({
       path: '/hospital',
       name: '院区设置',
