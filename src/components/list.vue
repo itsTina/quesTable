@@ -1,7 +1,7 @@
 <template>
   <div class="searchBox">
     <div>
-      <iInput placeholder="请输入相关模块	..." style="width: 300px" @input="filterChange('module',$event)"></iInput>
+      <iInput placeholder="请输入相关模块	..." style="width: 300px" v-model="filters.module"></iInput>
       <iButton type="primary" icon="ios-search" @click="searchTable">搜索</iButton>
       <iButton @click="showOtherFun"><i class="ivu-icon ivu-icon-chevron-down"></i></iButton>
     <span class="fr">
@@ -12,8 +12,8 @@
     </div>
     <div class="otherSearchBox" v-show="showOther">
       <br>
-      <div class="itemInput">提出人：<iInput placeholder="请输入..."  @input="filterChange('people',$event)"></iInput></div>
-      <div class="itemInput">受理人：<iInput placeholder="请输入..."  @input="filterChange('accepter',$event)"></iInput></div>
+      <div class="itemInput">提出人：<iInput placeholder="请输入..." v-model="filters.people"></iInput></div>
+      <div class="itemInput">受理人：<iInput placeholder="请输入..." v-model="filters.accepter"></iInput></div>
       <div class="itemInput">日期：<iDate-picker @on-change="filterChange('reportDate',$event)" placeholder="选择日期" format="yyyy-MM-dd" type="daterange" placement="bottom-end"></iDate-picker></div>
     </div>
     <br>
@@ -33,7 +33,7 @@
         <iRow>
           <iCol span="12">
             <iForm-item v-for="item in underHalf" :label="item.title+':'" :prop="item.key" key="item.key" class="marginBtom2">
-              <iDate-picker v-if="['reportDate','foundDate','expectedDate','realDate'].indexOf(item.key)>=0" placeholder="选择日期" format="yyyy-MM-dd" v-model="formCustom[item.key]"  type="date"></iDate-picker>
+              <iDate-picker v-if="['reportDate','foundDate','expectedDate','realDate'].indexOf(item.key)>=0" :value="now" format="yyyy-MM-dd" @on-change="formCustom[item.key]=$event" type="date"></iDate-picker>
               <textarea v-else-if="['describe','answer','remark','expectedResult'].indexOf(item.key)>=0" v-model="formCustom[item.key]"></textarea>
               <select v-else-if="item.type=='select'" v-model="formCustom[item.key]" class="w150">
                 <option :value="sItem.value" v-for="(sItem,index) in item.filters" :selected="(index==0)">{{sItem.label}}</option>
@@ -43,7 +43,7 @@
           </iCol>
           <iCol span="12">
             <iForm-item v-for="item in overHalf" :label="item.title+':'" :prop="item.key" key="item.key" class="marginBtom2">
-              <iDate-picker v-if="['reportDate','foundDate','expectedDate','realDate'].indexOf(item.key)>=0" placeholder="选择日期" format="yyyy-MM-dd" v-model="formCustom[item.key]"  type="date"></iDate-picker>
+              <iDate-picker v-if="['reportDate','foundDate','expectedDate','realDate'].indexOf(item.key)>=0" :value="now" format="yyyy-MM-dd" @on-change="formCustom[item.key]=$event" type="date"></iDate-picker>
               <textarea v-else-if="['describe','answer','remark','expectedResult'].indexOf(item.key)>=0" v-model="formCustom[item.key]"></textarea>
               <select v-else-if="item.type=='select'" v-model="formCustom[item.key]" class="w150">
                 <option :value="sItem.value" v-for="(sItem,index) in item.filters" :selected="(index==0)">{{sItem.label}}</option>
@@ -85,6 +85,7 @@
       var nowDate= date.getFullYear()+'-'+(m<10 ?('0'+m):m)+'-'+(d<10 ?('0'+d):d);
 
       return {
+          now:nowDate,
           filters:{
             pageIndex:1,
             reportDate: '',
@@ -101,7 +102,6 @@
           showOther:false,
           search:{},
           formCustom:{
-           // "index": "",
             "reportDate": nowDate,
             "product": 0,
             "module": '',
@@ -118,7 +118,7 @@
             "resolve":0,
             "remark":"",
             "answer":""
-          },
+          }
         };
     },
     computed:{
@@ -379,7 +379,7 @@
     methods: {
       filterM(f){
         try{
-          this.filters[f.key]="'"+f._filterChecked.join("','")+"'";
+          this.filters[f.key]=f._filterChecked.length>0 ? ("'"+f._filterChecked.join("','")+"'") : '';
           //this.$store.commit('changeFilters',{name:f.key,value:"'"+f._filterChecked.join("','")+"'"});
         }catch (err){
 
@@ -404,9 +404,11 @@
       },
       cancel(){},
       ok(){
+          debugger
           $.post(urlConfig.get('reportSave'),this.formCustom,(re)=>{
             if(re.status==0){
               message.success('保存成功');
+              location.reload()
             }else{
               message.error(re.msg||'保存失败');
             }
@@ -422,7 +424,7 @@
         this.$store.dispatch('reportList');
       },
       save(){
-          var data= {reportInfos:this.table.data};
+        var data= {reportInfos:this.table.data};
         $.ajax({
           type:'post',
           url:urlConfig.get('reportEdit'),

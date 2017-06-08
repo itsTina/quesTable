@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="titleBox ivu-menu ivu-menu-dark ivu-menu-horizontal">
-      <span class="titleSpan">OKR 考核管理平台</span>
+      <span class="titleSpan">问题反馈表</span>
       <span class="useSpan">
         <span>您好，{{loginId}}</span>
         <span @click="edit" class="link">修改密码</span>
@@ -13,11 +13,11 @@
       <iIcon type="ios-paper"></iIcon>
       问题反馈
     </iMenu-item>
-    <iMenu-item name="account">
+    <iMenu-item name="account" v-if="show">
       <iIcon type="ios-people"></iIcon>
       开户
     </iMenu-item>
-    <iMenu-item name="hospital">
+    <iMenu-item name="hospital" v-if="show">
       <iIcon type="ios-people"></iIcon>
       院区设置
     </iMenu-item>
@@ -37,6 +37,7 @@
       components:{iMenu,iIcon,iMenuItem},
     data () {
       return {
+          show:'admin'==$('#loginId').val(),
           loginId:$('#loginId').val()||"",
           active:''
       }
@@ -64,7 +65,7 @@
   }
 </script>
 
-<style scoped>
+<style>
   span.titleSpan{
     float: left;
     font-size: 24px;
